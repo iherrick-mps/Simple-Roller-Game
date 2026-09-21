@@ -86,4 +86,4 @@ Game.loop = function () {
   Draw.updateCamera();  
   Draw.everything();  
   window.requestAnimationFrame(Game.loop);  
-};  
+};
