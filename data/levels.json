@@ -1,33 +1,50 @@
-{
-  "_comment": "A level is just a list of piece names in order, left to right. Every name you use here must exist in data/pieces.json. Add, remove, or reorder pieces to build a new level. Every level should start with 'start' and end with 'finish'.",
-
-  "levels": [
-    {
-      "name": "Level 1 - Warm Up",
-      "pieces": [
-        "start",
-        "flat",
-        "gap",
-        "flat",
-        "spikes",
-        "platform",
-        "stairs",
-        "finish"
-      ]
-    },
-    {
-      "name": "Level 2 - Watch Your Step",
-      "pieces": [
-        "start",
-        "spikes",
-        "gap",
-        "step",
-        "spikepit",
-        "platform",
-        "gap",
-        "flat",
-        "finish"
-      ]
-    }
-  ]
-}
+{  
+  "_comment": "A level is just a list of piece names in order, left to right. Every name you use here must exist in data/pieces.json. Add, remove, or reorder pieces to build a new level. Every level should start with 'start' and end with 'finish'.",  
+  "levels": [  
+    {  
+      "name": "Level 1 - No Safe Ground",  
+      "pieces": [  
+        "start",  
+        "flat",  
+        "spikes",  
+        "gap",  
+        "platform",  
+        "crumble",  
+        "gap",  
+        "crumble",  
+        "spikes",  
+        "platform",  
+        "crumble",  
+        "step",  
+        "spikepit",  
+        "crumble",  
+        "flat",  
+        "finish"  
+      ]  
+    },  
+    {  
+      "name": "Level 2 - Total Chaos",  
+      "pieces": [  
+        "start",  
+        "crumble",  
+        "spikes",  
+        "gap",  
+        "crumble",  
+        "step",  
+        "spikepit",  
+        "gap",  
+        "crumble",  
+        "platform",  
+        "spikes",  
+        "crumble",  
+        "stairs",  
+        "crumble",  
+        "spikepit",  
+        "gap",  
+        "crumble",  
+        "flat",  
+        "finish"  
+      ]  
+    }  
+  ]  
+}  
