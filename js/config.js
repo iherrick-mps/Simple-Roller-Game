@@ -37,4 +37,4 @@ var CONFIG = {
   
   // --- rules ----------------------------------------------------------  
   START_LEVEL: 0      // which level in data/levels.json to load first  
-};  
+}:
