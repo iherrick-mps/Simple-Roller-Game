@@ -1,91 +1,99 @@
-/* =====================================================================
-   player.js  --  THE ROLLING CIRCLE.
-
-   This file owns everything about the player: where it is, how fast it
-   is going, and what happens when it hits something.
-
-   It does NOT draw anything. Drawing lives in js/draw.js.
-   ===================================================================== */
-
 var Player = {
-  x: 0,            // position in pixels, left edge of the box
-  y: 0,            // position in pixels, top edge of the box
-  vx: 0,           // speed left and right
-  vy: 0,           // speed up and down
-  onGround: false, // is the player standing on something right now?
-  angle: 0         // how far the circle has rolled, for drawing the dot
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  onGround: false,
+  angle: 0,
+  trail: [],
+  health: 3,
+  hitUntil: 0,
+  jumpsRemaining: 2
 };
 
-// Put the player back at the level's S square.
 Player.reset = function () {
-  Player.x = Level.startX;
-  Player.y = Level.startY;
+  Player.x = Level.startX || 0;
+  Player.y = (Level.startY || 0) - CONFIG.PLAYER_SIZE;
   Player.vx = 0;
   Player.vy = 0;
   Player.onGround = false;
   Player.angle = 0;
+  Player.trail = [];
+  Player.health = 3;
+  Player.hitUntil = 0;
+  Player.jumpsRemaining = 2;
 };
 
-// Run one frame of player movement.
 Player.update = function () {
   var size = CONFIG.PLAYER_SIZE;
 
-  // --- 1. decide how fast to go sideways ------------------------------
-  Player.vx = 0;
-  if (Input.left)  { Player.vx = -CONFIG.MOVE_SPEED; }
-  if (Input.right) { Player.vx =  CONFIG.MOVE_SPEED; }
+  var move = 0;
+  if (Input.left) move -= 1;
+  if (Input.right) move += 1;
 
-  // --- 2. jump, but only if we are standing on something --------------
-  if (Input.jump && Player.onGround) {
-    Player.vy = -CONFIG.JUMP_POWER;   // negative is UP
-    Player.onGround = false;
+  Player.vx = move * CONFIG.MOVE_SPEED;
+
+  if (Input.jumpPressed) {
+    if (Player.onGround) {
+      Player.vy = -CONFIG.JUMP_POWER;
+      Player.onGround = false;
+      Player.jumpsRemaining = 1;
+    } else if (Player.jumpsRemaining > 0) {
+      Player.vy = -CONFIG.JUMP_POWER;
+      Player.jumpsRemaining = 0;
+    }
+    Input.jumpPressed = false;
   }
 
-  // --- 3. gravity pulls down every single frame -----------------------
-  Player.vy = Player.vy + CONFIG.GRAVITY;
-  if (Player.vy > CONFIG.MAX_FALL) { Player.vy = CONFIG.MAX_FALL; }
+  Player.vy = Math.min(Player.vy + CONFIG.GRAVITY, CONFIG.MAX_FALL);
 
-  // --- 4. move sideways, one pixel at a time, stopping at walls -------
-  var stepX = 0;
-  if (Player.vx > 0) { stepX = 1; }
-  if (Player.vx < 0) { stepX = -1; }
-
+  var step = Player.vx >= 0 ? 1 : -1;
   for (var i = 0; i < Math.abs(Player.vx); i++) {
-    if (Collide.hitsSolid(Player.x + stepX, Player.y, size, size)) { break; }
-    Player.x = Player.x + stepX;
-    Player.angle = Player.angle + stepX / CONFIG.PLAYER_RADIUS; // roll it
+    if (Collide.hitsSolid(Player.x + step, Player.y, size, size)) break;
+    Player.x += step;
+    Player.angle += step / CONFIG.PLAYER_RADIUS;
   }
 
-  // --- 5. move up or down, one pixel at a time ------------------------
-  var stepY = 0;
-  if (Player.vy > 0) { stepY = 1; }
-  if (Player.vy < 0) { stepY = -1; }
-
+  var dirY = Player.vy > 0 ? 1 : -1;
   Player.onGround = false;
-
   for (var j = 0; j < Math.abs(Player.vy); j++) {
-    if (Collide.hitsSolid(Player.x, Player.y + stepY, size, size)) {
-      if (stepY > 0) { Player.onGround = true; }  // we landed on something
+    if (Collide.hitsSolid(Player.x, Player.y + dirY, size, size)) {
+      if (dirY > 0) {
+        Player.onGround = true;
+        Player.jumpsRemaining = 2;
+      }
       Player.vy = 0;
       break;
     }
-    Player.y = Player.y + stepY;
+    Player.y += dirY;
   }
 
-  // --- 6. keep the player inside the left edge of the world -----------
-  if (Player.x < 0) { Player.x = 0; }
+  Player.x = Math.max(0, Math.min(Player.x, Math.max(0, Level.pixelWidth() - size)));
+  Player.trail.push({
+    x: Player.x + size / 2,
+    y: Player.y + size / 2
+  });
+
+  if (Player.trail.length > 12) Player.trail.shift();
 };
 
-// Did the player just touch something deadly?
+Player.takeDamage = function () {
+  var now = performance.now();
+  if (now < Player.hitUntil) return false;
+  Player.hitUntil = now + CONFIG.BOSS_DAMAGE_COOLDOWN;
+  Player.health -= 1;
+  if (AudioFX && AudioFX.hurt) AudioFX.hurt();
+  return Player.health <= 0;
+};
+
 Player.isDead = function () {
-  var size = CONFIG.PLAYER_SIZE;
-  if (Collide.hitsSpike(Player.x, Player.y, size, size)) { return true; }
-  if (Player.y > CONFIG.CANVAS_H + 200) { return true; }   // fell off the world
-  return false;
+  return (
+    Collide.hitsSpike(Player.x, Player.y, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE) ||
+    Player.y > CONFIG.CANVAS_H + 180 ||
+    Player.health <= 0
+  );
 };
 
-// Did the player just reach the finish?
 Player.hasWon = function () {
-  var size = CONFIG.PLAYER_SIZE;
-  return Collide.hitsFinish(Player.x, Player.y, size, size);
+  return Collide.hitsFinish(Player.x, Player.y, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
 };
